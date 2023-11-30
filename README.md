@@ -15,7 +15,7 @@
 
 </div>
 
-This repository is the official PyTorch implementation of "CFSR: A Simple Convolutional Transformer for Lightweight Image Super-Resolution"
+This repository is the official PyTorch implementation of "Transforming Image Super-Resolution: A ConvFormer-based Efficient Approach"
 
 >Recent progress in single-image super-resolution (SISR) has achieved remarkable performance, yet the computational costs of these methods remain a challenge for deployment on resource-constrained devices. Especially for transformer-based methods, the self-attention mechanism in such models brings great breakthroughs while incurring substantial computational costs. To tackle this issue, we introduce the Convolutional Transformer layer (ConvFormer) and the ConvFormer-based Super-Resolution network (CFSR), which offer an effective and efficient solution for lightweight image super-resolution tasks. In detail, CFSR leverages the large kernel convolution as the feature mixer to replace the self-attention module, efficiently modeling long-range dependencies and extensive receptive fields with a slight computational cost. Furthermore, we propose an edge-preserving feed-forward network, simplified as EFN, to obtain local feature aggregation and simultaneously preserve more high-frequency information. Extensive experiments demonstrate that CFSR can achieve an advanced trade-off between computational cost and performance when compared to existing lightweight SR methods. Compared to state-of-the-art methods, e.g. ShuffleMixer, the proposed CFSR achieves \textit{0.39 dB} gains on Urban100 dataset for $\times2$ SR task while containing\textit{ 26\% }and \textit{31\%} fewer parameters and FLOPs, respectively.
 
