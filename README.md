@@ -1,6 +1,6 @@
 <div align="center">
 
-# Transforming Image Super-Resolution: \\A ConvFormer-based Efficient Approach
+# Transforming Image Super-Resolution: A ConvFormer-based Efficient Approach
 
 [Gang Wu](https://scholar.google.com/citations?user=JSqb7QIAAAAJ), [Junjun Jiang](http://homepage.hit.edu.cn/jiangjunjun), [Junpeng Jiang](), and [Xianming Liu](http://homepage.hit.edu.cn/xmliu)
 
