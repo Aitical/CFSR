@@ -9,6 +9,8 @@
 ---
 [paper]()
 **|**
+[results](https://drive.google.com/drive/folders/1M55TvlSn1BJVJ4Go5uVkvHFhfwo7Z5ov?usp=sharing)
+**|**
 [pretrained models]()
 
 [![Hits](https://hits.sh/github.com/Aitical/CFSR.svg)](https://hits.sh/github.com/Aitical/CFSR/)
@@ -21,6 +23,8 @@ This repository is the official PyTorch implementation of "Transforming Image Su
 
 ## Results
 
+Results of x2, x3, and x4 SR tasks are available at [Google Drive](https://drive.google.com/drive/folders/1M55TvlSn1BJVJ4Go5uVkvHFhfwo7Z5ov?usp=sharing)
+ 
 |Method | Scale| Params| FLOPs | Set5 (PSNR/SSIM)|Set14 (PSNR/SSIM)|B100 (PSNR/SSIM)|Urban100 (PSNR/SSIM)|Manga109 (PSNR/SSIM)|
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | VDSR  |  | $666 \mathrm{~K}$ | $612.6 \mathrm{G}$ | $31.35 / 0.8838$ | $28.01 / 0.7674$ | $27.29 / 0.7251$ | $25.18 / 0.7524$ | $28.83 / 0.8870$ |
