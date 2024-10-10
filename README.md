@@ -1,25 +1,31 @@
 <div align="center">
 
-# Transforming Image Super-Resolution: A ConvFormer-based Efficient Approach
+# [IEEE TIP] Transforming Image Super-Resolution: A ConvFormer-based Efficient Approach
 
 [Gang Wu](https://scholar.google.com/citations?user=JSqb7QIAAAAJ), [Junjun Jiang](http://homepage.hit.edu.cn/jiangjunjun), [Junpeng Jiang](), and [Xianming Liu](http://homepage.hit.edu.cn/xmliu)
 
 [AIIA Lab](https://aiialabhit.github.io/team/), Harbin Institute of Technology.
 
 ---
-[paper]()
-**|**
-[results](https://drive.google.com/drive/folders/1M55TvlSn1BJVJ4Go5uVkvHFhfwo7Z5ov?usp=sharing)
-**|**
-[pretrained models]()
 
+[![Paper2](https://img.shields.io/badge/Paper-arXiv-red)](https://arxiv.org/abs/2401.05633)
+[![Paper](https://img.shields.io/badge/Paper-IEEE%20TIP-blue)](https://github.com/Aitical/CFSR) 
+[![Models](https://img.shields.io/badge/Models-Hugging%20Face-gold)](https://huggingface.co/GWu/CFSR)
+[![Results](https://img.shields.io/badge/Results-GoogleDrive-brightgreen)](https://drive.google.com/drive/folders/1M55TvlSn1BJVJ4Go5uVkvHFhfwo7Z5ov?usp=sharing)
 [![Hits](https://hits.sh/github.com/Aitical/CFSR.svg)](https://hits.sh/github.com/Aitical/CFSR/)
 
 </div>
 
+## News
+- Paper accepted by IEEE TIP. The final version is coming soon.
+- [x] Upload implementation codes
+- [x] Upload pretrained models
+
+
 This repository is the official PyTorch implementation of "Transforming Image Super-Resolution: A ConvFormer-based Efficient Approach"
 
->Recent progress in single-image super-resolution (SISR) has achieved remarkable performance, yet the computational costs of these methods remain a challenge for deployment on resource-constrained devices. Especially for transformer-based methods, the self-attention mechanism in such models brings great breakthroughs while incurring substantial computational costs. To tackle this issue, we introduce the Convolutional Transformer layer (ConvFormer) and the ConvFormer-based Super-Resolution network (CFSR), which offer an effective and efficient solution for lightweight image super-resolution tasks. In detail, CFSR leverages the large kernel convolution as the feature mixer to replace the self-attention module, efficiently modeling long-range dependencies and extensive receptive fields with a slight computational cost. Furthermore, we propose an edge-preserving feed-forward network, simplified as EFN, to obtain local feature aggregation and simultaneously preserve more high-frequency information. Extensive experiments demonstrate that CFSR can achieve an advanced trade-off between computational cost and performance when compared to existing lightweight SR methods. Compared to state-of-the-art methods, e.g. ShuffleMixer, the proposed CFSR achieves \textit{0.39 dB} gains on Urban100 dataset for $\times2$ SR task while containing\textit{ 26\% }and \textit{31\%} fewer parameters and FLOPs, respectively.
+>Recent progress in single-image super-resolution (SISR) has achieved remarkable performance, yet the computational costs of these methods remain a challenge for deployment on resource-constrained devices. In particular, transformer-based methods, which leverage self-attention mechanisms, have led to significant breakthroughs but also introduce substantial computational costs. To tackle this issue, we introduce the Convolutional Transformer layer (ConvFormer) and propose a ConvFormer-based Super-Resolution network (CFSR), offering an effective and efficient solution for lightweight image super-resolution. The proposed method inherits the advantages of both convolution-based and transformer-based approaches. Specifically, CFSR utilizes large kernel convolutions as a feature mixer to replace the self-attention module, efficiently modeling long-range dependencies and extensive receptive fields with minimal computational overhead. Furthermore, we propose an edge-preserving feed-forward network (EFN) designed to achieve local feature aggregation while effectively preserving high-frequency information. Extensive experiments demonstrate that CFSR strikes an optimal balance between computational cost and performance compared to existing lightweight SR methods. When benchmarked against state-of-the-art methods such as ShuffleMixer, the proposed CFSR achieves a gain of 0.39 dB on the Urban100 dataset for the x2 super-resolution task while requiring 26\% and 31\% fewer parameters and FLOPs, respectively.
+
 
 ## Results
 
@@ -44,8 +50,22 @@ Results of x2, x3, and x4 SR tasks are available at [Google Drive](https://drive
 | ShuffleMixer |  | $411 K$ | $28.0 \mathrm{G}$ | $32.21 / 0.8953$ | $28.66 / 0.7827$ | $27.61 / 0.7366$ | $26.08 / 0.7835$ | $30.65 / 0.9093$|
 | **CFSR (Ours)** |  | $307 \mathrm{~K}$ | $17.5 \mathrm{G}$ |**$32.33/0.8964$**| **$28.73 / 0.7842$**| $27.63 / 0.7381$ | $26.21/0.7897$ | $30.72 / 0.9111$ |
 
+## Citation
+If you find this repository helpful, you may cite:
+```
+@ARTICLE{Wu_cfsr,
+author={Wu, Gang and Jiang, Junjun and Junpeng Jiang and Liu, Xianming},
+journal={IEEE Transactions on Image Processing}, 
+title={Transforming Image Super-Resolution: A ConvFormer-based Efficient Approach}, 
+year={2023},
+}
+```
 
-## TODO
-- [ ] Add implementation code
-- [ ] Add pretrained model
+
+## Acknowledgement
+
+We thank the authors for their nice sharing of [BasicSR](https://github.com/XPixelGroup/BasicSR), [ECBSR](https://github.com/xindongzhang/ECBSR), and [ShuffleMixer](https://github.com/sunny2109/ShuffleMixer)
+
+
+
 
