@@ -1,10 +1,8 @@
-import sys
 import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from uclsr.ops.large_kernel import DWConv
-from uclsr.utils.registry import ARCH_REGISTRY
+from basicsr.utils.registry import ARCH_REGISTRY
 
 
 class LayerNorm(nn.Module):
@@ -51,156 +49,21 @@ def get_conv2d(in_channels, out_channels, kernel_size, stride, padding, dilation
                      padding=padding, dilation=dilation, groups=groups, bias=bias)
 
 
-class ReparamLargeKernelConv(nn.Module):
+class LargeKernelConv(nn.Module):
 
     def __init__(self, in_channels, out_channels, kernel_size,
-                 stride, groups,
-                 small_kernel=None,
-                 small_kernel_merged=False):
-        super(ReparamLargeKernelConv, self).__init__()
+                 stride, groups):
+        super(LargeKernelConv, self).__init__()
         self.kernel_size = kernel_size
-        self.small_kernel = small_kernel
         self.out_channels = out_channels
-        # We assume the conv does not change the feature map size, so padding = k//2. Otherwise, you may configure padding as you wish, and change the padding of small_conv accordingly.
         padding = kernel_size // 2
 
-        self.lkb_origin = get_conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size,
+        self.lkb_reparam = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size,
                                      stride=stride, padding=padding, dilation=1, groups=groups, bias=True)
-        if small_kernel is not None:
-            assert small_kernel <= kernel_size, 'The kernel size for re-param cannot be larger than the large kernel!'
-            self.small_conv = get_conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=small_kernel,
-                                         stride=stride, padding=small_kernel//2, groups=groups, dilation=1, bias=True)
-            scale_sobel_x = torch.randn(size=(in_channels, 1, 1, 1)) * 1e-3
-            self.scale_sobel_x = nn.Parameter(
-                torch.FloatTensor(scale_sobel_x))
-            sobel_x_bias = torch.randn(in_channels) * 1e-3
-            sobel_x_bias = torch.reshape(sobel_x_bias, (in_channels,))
-            self.sobel_x_bias = nn.Parameter(
-                torch.FloatTensor(sobel_x_bias))
-            self.mask_sobel_x = torch.zeros(
-                (in_channels, 1, 3, 3), dtype=torch.float32)
-            for i in range(in_channels):
-                self.mask_sobel_x[i, 0, 0, 1] = 1.0
-                self.mask_sobel_x[i, 0, 1, 0] = 2.0
-                self.mask_sobel_x[i, 0, 2, 0] = 1.0
-                self.mask_sobel_x[i, 0, 0, 2] = -1.0
-                self.mask_sobel_x[i, 0, 1, 2] = -2.0
-                self.mask_sobel_x[i, 0, 2, 2] = -1.0
-            self.mask_sobel_x = nn.Parameter(
-                data=self.mask_sobel_x, requires_grad=False)
-
-            scale_sobel_y = torch.randn(size=(in_channels, 1, 1, 1)) * 1e-3
-            self.scale_sobel_y = nn.Parameter(
-                torch.FloatTensor(scale_sobel_y))
-            sobel_y_bias = torch.randn(in_channels) * 1e-3
-            sobel_y_bias = torch.reshape(sobel_y_bias, (in_channels,))
-            self.sobel_y_bias = nn.Parameter(
-                torch.FloatTensor(sobel_y_bias))
-            self.mask_sobel_y = torch.zeros(
-                (in_channels, 1, 3, 3), dtype=torch.float32)
-            for i in range(in_channels):
-                self.mask_sobel_y[i, 0, 0, 0] = 1.0
-                self.mask_sobel_y[i, 0, 0, 1] = 2.0
-                self.mask_sobel_y[i, 0, 0, 2] = 1.0
-                self.mask_sobel_y[i, 0, 2, 0] = -1.0
-                self.mask_sobel_y[i, 0, 2, 1] = -2.0
-                self.mask_sobel_y[i, 0, 2, 2] = -1.0
-            self.mask_sobel_y = nn.Parameter(
-                data=self.mask_sobel_y, requires_grad=False)
-
-            scale_laplacian = torch.randn(
-                size=(in_channels, 1, 1, 1)) * 1e-3
-            self.scale_laplacian = nn.Parameter(
-                torch.FloatTensor(scale_laplacian))
-            laplacian_bias = torch.randn(in_channels) * 1e-3
-            laplacian_bias = torch.reshape(laplacian_bias, (in_channels,))
-            self.laplacian_bias = nn.Parameter(
-                torch.FloatTensor(laplacian_bias))
-            self.mask_laplacian = torch.zeros(
-                (in_channels, 1, 3, 3), dtype=torch.float32)
-            for i in range(in_channels):
-                self.mask_laplacian[i, 0, 0, 0] = 1.0
-                self.mask_laplacian[i, 0, 1, 0] = 1.0
-                self.mask_laplacian[i, 0, 1, 2] = 1.0
-                self.mask_laplacian[i, 0, 2, 1] = 1.0
-                self.mask_laplacian[i, 0, 1, 1] = -4.0
-            self.mask_laplacian = nn.Parameter(
-                data=self.mask_laplacian, requires_grad=False)
-
-        if small_kernel_merged:
-            self.lkb_reparam = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size,
-                                         stride=stride, padding=padding, dilation=1, groups=groups, bias=True)
-            self.merge_kernel()
 
     def forward(self, inputs):
-        if hasattr(self, 'lkb_reparam'):
-            out = self.lkb_reparam(inputs)
-        else:
-            out = self.lkb_origin(inputs)
-            if hasattr(self, 'small_conv'):
-                out += self.small_conv(inputs)
-                out += F.conv2d(input=inputs, weight=self.scale_sobel_x * self.mask_sobel_x,
-                                bias=self.sobel_x_bias, stride=1, padding=1, groups=self.out_channels)
-                out += F.conv2d(input=inputs, weight=self.scale_sobel_y * self.mask_sobel_y,
-                                bias=self.sobel_y_bias, stride=1, padding=1, groups=self.out_channels)
-                out += F.conv2d(input=inputs, weight=self.scale_laplacian * self.mask_laplacian,
-                                bias=self.laplacian_bias, stride=1, padding=1, groups=self.out_channels)
-
+        out = self.lkb_reparam(inputs)
         return out
-
-    def merge_reparam_large_kernel_conv(layer):
-        if hasattr(layer, 'lkb_origin'):
-            # Initialize merged kernel and bias
-            merged_weight = layer.lkb_origin.weight.clone()
-            merged_bias = layer.lkb_origin.bias.clone(
-            ) if layer.lkb_origin.bias is not None else torch.zeros(layer.out_channels)
-
-            # Add small kernel if it exists
-            if hasattr(layer, 'small_conv'):
-                small_kernel_weight = layer.small_conv.weight
-                small_kernel_bias = layer.small_conv.bias if layer.small_conv.bias is not None else torch.zeros(
-                    layer.out_channels)
-
-                small_kernel_weight += layer.scale_sobel_x * layer.mask_sobel_x + \
-                    layer.scale_sobel_y * layer.mask_sobel_y + \
-                    layer.scale_laplacian * layer.mask_laplacian
-                small_kernel_bias += layer.sobel_x_bias+layer.sobel_y_bias + \
-                    layer.laplacian_bias
-
-                padding_diff = (
-                    merged_weight.shape[2] - small_kernel_weight.shape[2]) // 2
-                merged_weight[:, :, padding_diff:-padding_diff,
-                              padding_diff:-padding_diff] += small_kernel_weight
-                # if layer.small_conv.bias is not None:
-                merged_bias += small_kernel_bias
-
-            # Create a new nn.Conv2d layer with merged parameters
-            layer.lkb_reparam = nn.Conv2d(
-                in_channels=layer.lkb_origin.in_channels,
-                out_channels=layer.lkb_origin.out_channels,
-                kernel_size=layer.lkb_origin.kernel_size,
-                stride=layer.lkb_origin.stride,
-                padding=layer.lkb_origin.padding,
-                groups=layer.lkb_origin.groups,
-                bias=True
-            )
-            layer.lkb_reparam.weight.data = merged_weight
-            layer.lkb_reparam.bias.data = merged_bias
-
-            # Delete old attributes to avoid confusion
-            del layer.lkb_origin
-            if hasattr(layer, 'small_conv'):
-                del layer.small_conv
-            layer.__delattr__('scale_sobel_x')
-            layer.__delattr__('mask_sobel_x')
-            layer.__delattr__('sobel_x_bias')
-            layer.__delattr__('sobel_y_bias')
-            layer.__delattr__('mask_sobel_y')
-            layer.__delattr__('scale_sobel_y')
-            layer.__delattr__('laplacian_bias')
-            layer.__delattr__('scale_laplacian')
-            layer.__delattr__('mask_laplacian')
-        # return layer
 
 
 class MLP(nn.Module):
@@ -307,17 +170,15 @@ class MLP(nn.Module):
 
 
 class ConvMod(nn.Module):
-    def __init__(self, dim, dw_size, small_kernel=None, small_kernel_merged=False):
+    def __init__(self, dim, dw_size):
         super().__init__()
 
         self.norm = LayerNorm(dim, eps=1e-6, data_format="channels_first")
         self.a = nn.Sequential(
             nn.Conv2d(dim, dim, 1),
             nn.GELU(),
-            ReparamLargeKernelConv(dim, dim, dw_size, stride=1, groups=dim,
-                                   small_kernel=small_kernel, small_kernel_merged=small_kernel_merged)
+            LargeKernelConv(dim, dim, dw_size, stride=1, groups=dim)
         )
-
         self.v = nn.Conv2d(dim, dim, 1)
         self.proj = nn.Conv2d(dim, dim, 1)
 
@@ -332,10 +193,10 @@ class ConvMod(nn.Module):
 
 
 class Block(nn.Module):
-    def __init__(self, dim, dw_size, small_kernel=None, small_kernel_merged=False, mlp_ratio=4.):
+    def __init__(self, dim, dw_size, mlp_ratio=4.):
         super().__init__()
 
-        self.attn = ConvMod(dim, dw_size, small_kernel, small_kernel_merged)
+        self.attn = ConvMod(dim, dw_size)
         self.mlp = MLP(dim, mlp_ratio)
         layer_scale_init_value = 1e-6
         self.layer_scale_1 = nn.Parameter(
@@ -350,10 +211,10 @@ class Block(nn.Module):
 
 
 class Layer(nn.Module):
-    def __init__(self, dim, depth, dw_size, small_kernel=None, small_kernel_merged=False, mlp_ratio=4.):
+    def __init__(self, dim, depth, dw_size, mlp_ratio=4.):
         super().__init__()
         self.blocks = nn.ModuleList([
-            Block(dim, dw_size, small_kernel, small_kernel_merged, mlp_ratio) for i in range(depth)
+            Block(dim, dw_size, mlp_ratio) for i in range(depth)
         ])
         self.conv = nn.Conv2d(dim, dim, 1)
 
@@ -388,10 +249,10 @@ class UpsampleOneStep(nn.Sequential):
 
 
 @ARCH_REGISTRY.register()
-class Conv2Former_AllEdge(nn.Module):
-    def __init__(self, img_size=64, in_chans=3, embed_dim=96, depths=(6, 6, 6, 6), dw_size=3, small_kernel=None,
-                 mlp_ratio=4., small_kernel_merged=False, upscale=2, img_range=1., upsampler=''):
-        super(Conv2Former_AllEdge, self).__init__()
+class CFSR(nn.Module):
+    def __init__(self, in_chans=3, embed_dim=96, depths=(6, 6, 6, 6), dw_size=3,
+                 mlp_ratio=4., upscale=2, img_range=1., upsampler=''):
+        super(CFSR, self).__init__()
         self.img_range = img_range
         if in_chans == 3:
             rgb_mean = (0.4488, 0.4371, 0.4040)
@@ -406,7 +267,7 @@ class Conv2Former_AllEdge(nn.Module):
         self.layers = nn.ModuleList()
         for i_layer in range(self.num_layers):
             layer = Layer(
-                embed_dim, depths[i_layer], dw_size, small_kernel, small_kernel_merged, mlp_ratio)
+                embed_dim, depths[i_layer], dw_size, mlp_ratio)
             self.layers.append(layer)
         self.norm = LayerNorm(embed_dim, eps=1e-6,
                               data_format="channels_first")
@@ -416,7 +277,7 @@ class Conv2Former_AllEdge(nn.Module):
         else:
             self.conv_last = nn.Conv2d(embed_dim, in_chans, 3, 1, 1)
         self.merged_inf = False
-        # self.merge_all()
+        self.merge_all()
 
     def forward_features(self, x):
         for layer in self.layers:
@@ -426,6 +287,8 @@ class Conv2Former_AllEdge(nn.Module):
         return x
 
     def forward(self, x):
+        # if not self.merged_inf:
+        #     self.merge_all()
 
         h, w = x.shape[2:]
         self.mean = self.mean.type_as(x)
@@ -445,20 +308,10 @@ class Conv2Former_AllEdge(nn.Module):
 
         return x
 
-    # def eval(self,):
-    #     super().eval()
-    #     self.merge_all()
-
-    # def merge_all(self,):
-    #     named_modules = list(self.named_modules())
-    #     for name, module in named_modules:
-    #         if isinstance(module, ReparamLargeKernelConv):
-    #             # merged_module = merge_reparam_large_kernel_conv(module)
-    #             print(f"Merging Kernel layer: {name}")
-
-    #             module.merge_reparam_large_kernel_conv()
-    #             # setattr(model, name, merged_module)
-    #         elif isinstance(module, MLP):
-    #             print(f"Merging MLP layer: {name}")
-    #             module.merge_mlp()
-    #     self.merged_inf = True
+    def merge_all(self,):
+        named_modules = list(self.named_modules())
+        for name, module in named_modules:
+            if isinstance(module, MLP):
+                print(f"Merging MLP layer: {name}")
+                module.merge_mlp()
+        self.merged_inf = True
