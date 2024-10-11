@@ -57,7 +57,7 @@ If you find this repository helpful, you may cite:
 author={Wu, Gang and Jiang, Junjun and Junpeng Jiang and Liu, Xianming},
 journal={IEEE Transactions on Image Processing}, 
 title={Transforming Image Super-Resolution: A ConvFormer-based Efficient Approach}, 
-year={2023},
+year={2024},
 }
 ```
 
