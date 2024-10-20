@@ -9,7 +9,7 @@
 ---
 
 [![Paper2](https://img.shields.io/badge/Paper-arXiv-red)](https://arxiv.org/abs/2401.05633)
-[![Paper](https://img.shields.io/badge/Paper-IEEE%20TIP-blue)](https://github.com/Aitical/CFSR) 
+[![Paper](https://img.shields.io/badge/Paper-IEEE%20TIP-blue)]([https://github.com/Aitical/CFSR](https://ieeexplore.ieee.org/document/10723228)) 
 [![Models](https://img.shields.io/badge/Models-Hugging%20Face-gold)](https://huggingface.co/GWu/CFSR)
 [![Results](https://img.shields.io/badge/Results-GoogleDrive-brightgreen)](https://drive.google.com/drive/folders/1M55TvlSn1BJVJ4Go5uVkvHFhfwo7Z5ov?usp=sharing)
 [![Hits](https://hits.sh/github.com/Aitical/CFSR.svg)](https://hits.sh/github.com/Aitical/CFSR/)
@@ -17,7 +17,7 @@
 </div>
 
 ## News
-- Paper accepted by IEEE TIP. The final version is coming soon.
+- [x] 🚀 Accepted by IEEE TIP.
 - [x] Upload implementation codes
 - [x] Upload pretrained models
 
