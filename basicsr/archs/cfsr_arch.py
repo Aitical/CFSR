@@ -276,7 +276,7 @@ class CFSR(nn.Module):
             self.upsample = UpsampleOneStep(upscale, embed_dim, in_chans)
         else:
             self.conv_last = nn.Conv2d(embed_dim, in_chans, 3, 1, 1)
-        self.merged_inf = False
+        # self.merged_inf = False
         self.merge_all()
 
     def forward_features(self, x):
